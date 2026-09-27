@@ -1,11 +1,12 @@
-# brandr CI: test on every push/PR; on a v* tag also build the static binaries
-# (i586 + x86_64 musl) and publish them as a GitHub release.
+# brandr CI: test on every push/PR; on a brandr-v* tag (e.g. brandr-v0.1.0) also build
+# the static binaries (i586 + x86_64 musl) and publish them as a GitHub release.
+# Tags are prefixed because this fork inherits upstream caligula's v* tags.
 name: brandr
 
 on:
   push:
     branches: [main]
-    tags: ["v*"]
+    tags: ["brandr-v*"]
   pull_request:
 
 jobs:
@@ -16,6 +17,12 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: clippy
+      - name: Tag matches Cargo.toml
+        if: startsWith(github.ref, 'refs/tags/brandr-v')
+        run: |
+          want="${GITHUB_REF_NAME#brandr-v}"
+          have=$(sed -n 's/^version = "\(.*\)"/\1/p' Cargo.toml | head -1)
+          [ "$want" = "$have" ] || { echo "tag $GITHUB_REF_NAME but Cargo.toml says $have"; exit 1; }
       - name: Tests
         run: cargo test --locked --bin brandr
       - name: Clippy (report only)
@@ -34,7 +41,11 @@ jobs:
       - name: Package
         run: |
           set -eu
-          name=brandr-${GITHUB_REF_NAME//\//-}-${{ matrix.arch }}-linux-musl
+          case "$GITHUB_REF_NAME" in
+            brandr-v*) version="${GITHUB_REF_NAME#brandr-v}" ;;
+            *) version="dev-${GITHUB_SHA::7}" ;;
+          esac
+          name=brandr-$version-${{ matrix.arch }}-linux-musl
           mkdir -p "pkg/$name"
           cp dist/${{ matrix.arch }}/brandr LICENSE README.md "pkg/$name/"
           # licences of everything statically linked in
@@ -50,7 +61,7 @@ jobs:
           path: brandr-*.tar.gz*
 
   release:
-    if: startsWith(github.ref, 'refs/tags/v')
+    if: startsWith(github.ref, 'refs/tags/brandr-v')
     needs: static
     runs-on: ubuntu-latest
     permissions:

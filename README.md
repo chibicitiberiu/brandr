@@ -73,7 +73,7 @@ and honour `Range: bytes=N-`.
 cargo build --release                 # native build: target/release/brandr
 scripts/build-static.sh               # static i586 + x86_64 in containers -> dist/
 ```
-Release binaries are attached to [GitHub releases](https://github.com/chibicitiberiu/brandr/releases).
+Release binaries are attached to [GitHub releases](https://github.com/chibicitiberiu/brandr/releases) (tags `brandr-vX.Y.Z`; the fork keeps upstream's own `v*` tags out of the way).
 
 The Nix flake, AUR and Debian packaging files come from upstream and are **not maintained in
 this fork** (they still build `caligula`).
