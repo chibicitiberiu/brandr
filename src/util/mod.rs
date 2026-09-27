@@ -39,7 +39,7 @@ pub mod stream;
 /// and sockets.
 pub fn ensure_state_dir() -> std::io::Result<PathBuf> {
     let dir = env::temp_dir().join(format!(
-        "caligula-{}-{}",
+        "brandr-{}-{}",
         process::id(),
         SystemTime::now()
             .duration_since(SystemTime::UNIX_EPOCH)

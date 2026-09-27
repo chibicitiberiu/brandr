@@ -29,11 +29,11 @@ impl LogPaths {
     pub fn init(state_dir: impl AsRef<Path>) -> Self {
         Self {
             log_path: if cfg!(debug_assertions) {
-                "caligula.log".into()
+                "brandr.log".into()
             } else {
                 state_dir
                     .as_ref()
-                    .join("caligula.log")
+                    .join("brandr.log")
                     .to_str()
                     .unwrap()
                     .to_owned()

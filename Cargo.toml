@@ -1,10 +1,11 @@
 [package]
-name = "caligula"
-description = "A lightweight, user-friendly disk imaging tool"
-homepage = "https://github.com/ifd3f/caligula"
-repository = "https://github.com/ifd3f/caligula.git"
-authors = ["Astrid Yu <astrid@astrid.tech>"]
-version = "0.5.0-rc.2"
+# brandr is a fork of caligula (https://github.com/ifd3f/caligula) by Astrid Yu
+name = "brandr"
+description = "A network-streaming, wizard-driven fork of the caligula disk imager, for netbooted disk writing"
+homepage = "https://github.com/chibicitiberiu/brandr"
+repository = "https://github.com/chibicitiberiu/brandr.git"
+authors = ["Astrid Yu <astrid@astrid.tech>", "Tiberiu Chibici <chibicitiberiu@gmail.com>"]
+version = "0.1.0"
 edition = "2024"
 license = "GPL-3.0"
 
