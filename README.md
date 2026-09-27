@@ -12,6 +12,14 @@ server with an auto-detecting ISO menu), but works with any HTTP server.
 > project. All of caligula's engine (write, verify, decompression, progress UI) is Astrid Yu's
 > work. Upstream's README is kept in [docs/upstream-README.md](docs/upstream-README.md).
 
+<p align="center">
+  <img src="docs/img/writer-image.png" width="48%" alt="Step 1: pick an image from the catalog">
+  <img src="docs/img/writer-target.png" width="48%" alt="Step 2: pick the target disk">
+  <img src="docs/img/writer-method.png" width="48%" alt="Step 3: pick a write method">
+  <img src="docs/img/writer-review.png" width="48%" alt="Step 4: review before writing">
+</p>
+<p align="center"><sub>The <code>--catalog</code> wizard on an 80x25 Linux text console (QEMU, 256 MB Pentium).</sub></p>
+
 ## What the fork adds
 - **HTTP streaming input**: `brandr burn http://server/image.iso`. The size comes from `HEAD`,
   the data from a single streaming `GET`, and verification re-reads over HTTP. Memory use stays at a
