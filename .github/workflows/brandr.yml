@@ -1,0 +1,66 @@
+# brandr CI: test on every push/PR; on a v* tag also build the static binaries
+# (i586 + x86_64 musl) and publish them as a GitHub release.
+name: brandr
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+      - name: Tests
+        run: cargo test --locked --bin brandr
+      - name: Clippy (report only)
+        run: cargo clippy --locked --bin brandr
+
+  static:
+    needs: test
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        arch: [i586, x86_64]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build static ${{ matrix.arch }}
+        run: scripts/build-static.sh ${{ matrix.arch }}
+      - name: Package
+        run: |
+          set -eu
+          name=brandr-${GITHUB_REF_NAME//\//-}-${{ matrix.arch }}-linux-musl
+          mkdir -p "pkg/$name"
+          cp dist/${{ matrix.arch }}/brandr LICENSE README.md "pkg/$name/"
+          # licences of everything statically linked in
+          cargo tree --locked -e normal --prefix none --target ${{ matrix.arch }}-unknown-linux-musl \
+            --format "{p}  {l}" | sed "s/ (\*)$//" | sort -u > "pkg/$name/THIRD-PARTY.txt"
+          printf '\nAlso linked: musl libc (MIT), bzip2 (BSD-like), xz/liblzma (0BSD/public domain)\n' \
+            >> "pkg/$name/THIRD-PARTY.txt"
+          tar -C pkg -czf "$name.tar.gz" "$name"
+          sha256sum "$name.tar.gz" > "$name.tar.gz.sha256"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: brandr-${{ matrix.arch }}
+          path: brandr-*.tar.gz*
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: static
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          merge-multiple: true
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" artifacts/* --repo "$GITHUB_REPOSITORY" --generate-notes

@@ -35,3 +35,4 @@ result-man
 .nixos-test-history
 
 *.sock
+/dist/
