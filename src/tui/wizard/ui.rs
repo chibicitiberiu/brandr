@@ -1,4 +1,4 @@
-//! Screen building blocks for the netflash wizard: a frame (title bar, heading,
+//! Screen building blocks for the brandr wizard: a frame (title bar, heading,
 //! footer), a filterable list with a details pane, and a dialog with buttons.
 //!
 //! Everything is drawn with plain box-drawing characters and 8 colours so it
@@ -87,7 +87,7 @@ impl Chrome<'_> {
             .split(area);
 
         let width = area.width as usize;
-        let left = " netflash";
+        let left = " brandr";
         let right = format!("{} ", self.step);
         let pad = width.saturating_sub(left.len() + right.chars().count());
         f.render_widget(

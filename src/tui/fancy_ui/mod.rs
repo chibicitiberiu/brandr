@@ -40,7 +40,7 @@ where
 {
     let (tx, mut rx) = mpsc::channel(128);
     // Dropped when the draw loop ends, so the event task stops right away instead
-    // of on the next keypress, which it would otherwise swallow (netflash shows
+    // of on the next keypress, which it would otherwise swallow (brandr shows
     // more screens after this one, e.g. "insert disk 2").
     let (stop_tx, mut stop_rx) = tokio::sync::oneshot::channel::<()>();
 

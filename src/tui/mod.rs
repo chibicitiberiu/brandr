@@ -40,11 +40,11 @@ pub fn main(
         }
     };
 
-    // netflash: no image given, pick everything in the full-screen wizard
+    // no image given, pick everything in the full-screen wizard
     if args.image.is_none()
         && let Some(catalog) = args.catalog.clone()
     {
-        return netflash_main(&runtime, facade, &log_paths, &catalog);
+        return wizard_main(&runtime, facade, &log_paths, &catalog);
     }
 
     let Some(start_write_verify) = do_setup_wizard(&runtime, facade.clone(), &args)? else {
@@ -84,9 +84,9 @@ pub fn main(
     Ok(())
 }
 
-/// netflash flow: wizard, then one write + verify per disk (several for a
+/// Wizard flow: wizard, then one write + verify per disk (several for a
 /// floppy set, with an "insert the next floppy" screen in between).
-fn netflash_main(
+fn wizard_main(
     runtime: &impl RemoteSpawn,
     facade: Arc<impl CaligulaFacade>,
     log_paths: &LogPaths,

@@ -1,4 +1,4 @@
-//! Target devices as netflash shows them: whole disks only, with their bus.
+//! Target devices as brandr shows them: whole disks only, with their bus.
 
 use std::io::stdout;
 

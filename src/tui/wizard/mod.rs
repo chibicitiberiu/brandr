@@ -1,4 +1,4 @@
-//! netflash's full-screen setup wizard (used with `--catalog`):
+//! brandr's full-screen setup wizard (used with `--catalog`):
 //!
 //!   1 Image   pick an image from the network catalog
 //!   2 Target  pick a whole disk (or partition one and come back)
