@@ -31,6 +31,7 @@ pub mod io_graph;
 pub mod legacy_io;
 pub mod phased_channel;
 pub mod runtime;
+pub mod source;
 pub mod stdiomux;
 pub mod stream;
 

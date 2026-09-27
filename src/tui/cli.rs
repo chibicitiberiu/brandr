@@ -13,9 +13,18 @@ use crate::codec::{
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
 pub struct BurnArgs {
-    /// Input image to burn.
-    #[arg(value_parser = parse_image_path, display_order = 0)]
-    pub image: PathBuf,
+    /// Input image to burn: a local file, or an http:// URL that is streamed
+    /// straight to the disk (never downloaded as a whole).
+    ///
+    /// Optional when --catalog is given: the image is then picked from a list.
+    #[arg(value_parser = parse_image_path, display_order = 0, required_unless_present = "catalog")]
+    pub image: Option<PathBuf>,
+
+    /// URL of an image catalog (JSON, as served by the PXE server's
+    /// /images.json). Shows a "Pick image file" screen instead of taking an
+    /// image argument.
+    #[arg(long, display_order = 0)]
+    pub catalog: Option<String>,
 
     /// Where to write the output. If not supplied, we will search for possible
     /// disks and ask you for where you want to burn.
@@ -91,6 +100,15 @@ pub struct BurnArgs {
     pub root: UseSudo,
 }
 
+impl BurnArgs {
+    /// The image to burn. Resolved from --catalog before the setup wizard runs.
+    pub fn image(&self) -> &PathBuf {
+        self.image
+            .as_ref()
+            .expect("image is resolved before the setup wizard")
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum HashArg {
     Ask,
@@ -137,6 +155,10 @@ fn parse_path_is_file(path: PathBuf) -> Result<PathBuf, String> {
 }
 
 fn parse_image_path(p: &str) -> Result<PathBuf, String> {
+    // http:// images are streamed; their existence is checked when opened
+    if p.starts_with("http://") {
+        return Ok(PathBuf::from(p));
+    }
     parse_path_exists(p).and_then(parse_path_is_file)
 }
 

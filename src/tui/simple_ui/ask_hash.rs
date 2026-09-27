@@ -30,7 +30,7 @@ pub fn ask_hash(
 ) -> anyhow::Result<Option<FileHashInfo>> {
     let hash_params = match (&args.hash, &args.hash_file) {
         (_, Some(hash_file)) => {
-            let Some((algs, _, expected_hash)) = find_hash_in_user_file(&args.image, hash_file)
+            let Some((algs, _, expected_hash)) = find_hash_in_user_file(args.image(), hash_file)
             else {
                 eprintln!(
                     "Could not parse {} as a valid hash file!",
@@ -50,7 +50,7 @@ pub fn ask_hash(
             })
         }
         (HashArg::Skip, _) => None,
-        (HashArg::Ask, _) => match find_hash_in_standard_files(&args.image) {
+        (HashArg::Ask, _) => match find_hash_in_standard_files(args.image()) {
             Some((algs, expected_hashfile, expected_hash))
                 if Confirm::new(&format!(
                     "Detected hash file {expected_hashfile} in the directory. Do you want to use \
@@ -80,7 +80,7 @@ pub fn ask_hash(
         return Ok(None);
     };
 
-    let hash_result = do_hashing(runtime, orc, &args.image, &params)?;
+    let hash_result = do_hashing(runtime, orc, args.image(), &params)?;
 
     if hash_result.file_hash == params.expected_hash {
         eprintln!("Disk image verified successfully!");

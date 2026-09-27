@@ -61,7 +61,7 @@ impl StatefulWidget for SpeedChart<'_> {
 
         // Generate datasets
         let dataset_style = Dataset::default()
-            .marker(symbols::Marker::Braille)
+            .marker(chart_marker())
             .graph_type(GraphType::Line);
 
         let mut datasets = vec![
@@ -337,5 +337,13 @@ impl Widget for QuitModal {
 
         Clear.render(area, buf);
         prompt.render(area, buf);
+    }
+}
+
+/// The Linux text console (TERM=linux) has no braille glyphs; use blocks there.
+fn chart_marker() -> symbols::Marker {
+    match std::env::var("TERM") {
+        Ok(t) if t == "linux" => symbols::Marker::Block,
+        _ => symbols::Marker::Braille,
     }
 }

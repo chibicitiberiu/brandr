@@ -52,7 +52,7 @@ pub fn do_setup_wizard(
         Some(f) => WriteTarget::try_from(f.as_ref())?,
         None => ask_outfile(args)?,
     };
-    let begin_params = WriteVerifyWorkflow::new(args.image.clone(), compression, target)?;
+    let begin_params = WriteVerifyWorkflow::new(args.image().clone(), compression, target)?;
     if !confirm_write(args, &begin_params)? {
         eprintln!("Aborting.");
         return Ok(None);

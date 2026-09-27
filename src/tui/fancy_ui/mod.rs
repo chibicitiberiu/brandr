@@ -39,13 +39,21 @@ where
     T: Stream<Item = std::io::Result<crossterm::event::Event>> + Send + 'static,
 {
     let (tx, mut rx) = mpsc::channel(128);
+    // Dropped when the draw loop ends, so the event task stops right away instead
+    // of on the next keypress, which it would otherwise swallow (netflash shows
+    // more screens after this one, e.g. "insert disk 2").
+    let (stop_tx, mut stop_rx) = tokio::sync::oneshot::channel::<()>();
 
     // Aggregate events together inside the async thread
     let terminal_events = params.terminal_events;
     runtime.spawn(move || async move {
         let mut events = pin!(create_event_stream(terminal_events));
 
-        while let Some(ev) = events.next().await {
+        loop {
+            let ev = match futures::future::select(events.next(), &mut stop_rx).await {
+                futures::future::Either::Left((Some(ev), _)) => ev,
+                _ => return,
+            };
             let Ok(_) = tx.send(ev).await else {
                 return;
             };
@@ -62,6 +70,7 @@ where
         params.child_state,
         params.log_paths,
     );
+    drop(stop_tx);
 }
 
 /// Creates the main [`UIEvent`] stream to be fed to the fancy UI.

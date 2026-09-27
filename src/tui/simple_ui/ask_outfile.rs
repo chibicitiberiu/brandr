@@ -14,13 +14,13 @@ use crate::{
 pub fn ask_compression(args: &BurnArgs) -> anyhow::Result<CompressionFormat> {
     let cf = match args.compression {
         CompressionArg::Auto | CompressionArg::Ask => {
-            CompressionFormat::detect_from_path(&args.image)
+            CompressionFormat::detect_from_path(args.image())
         }
         other => other.associated_format(),
     };
 
     if let Some(cf) = cf {
-        eprintln!("Input file: {}", args.image.to_string_lossy());
+        eprintln!("Input file: {}", args.image().to_string_lossy());
         eprintln!("Detected compression format: {}", cf);
 
         if args.force || args.compression != CompressionArg::Ask {
@@ -35,7 +35,7 @@ pub fn ask_compression(args: &BurnArgs) -> anyhow::Result<CompressionFormat> {
 
     eprintln!(
         "Couldn't detect compression format for {}",
-        args.image.to_string_lossy()
+        args.image().to_string_lossy()
     );
     if args.force {
         eprintln!("Since --force was provided, assuming it's uncompressed!");

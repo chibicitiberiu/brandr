@@ -4,7 +4,7 @@
 //! GUARANTEES!
 
 use std::{
-    fs::{File, OpenOptions},
+    fs::OpenOptions,
     io::{self, Read, Seek},
     process::{Command, Stdio},
     rc::Rc,
@@ -22,6 +22,7 @@ use crate::{
         device,
         legacy_io::{SyncDataFile, VerifyOp, WriteOp, open_blockdev},
         phased_channel::{self, UninitializedReceiver},
+        source::{InputSource, open_input},
     },
 };
 
@@ -84,7 +85,7 @@ pub fn spawn_writer(
 fn run(
     mut tx: impl Fn(WVEvent),
     args: &WVAction,
-    mut file: File,
+    mut file: InputSource,
     mut disk: SyncDataFile,
 ) -> Result<(), WVError> {
     let bs = match args.block_size {
@@ -148,12 +149,12 @@ fn run(
     Ok(())
 }
 
-fn initialize(args: &WVAction) -> Result<(File, u64, SyncDataFile), WVError> {
+fn initialize(args: &WVAction) -> Result<(InputSource, u64, SyncDataFile), WVError> {
     if cfg!(target_os = "macos") && args.target_type == device::Type::Disk {
         run_diskutil_umount(args).map_err(UnmountError::Diskutil)?;
     }
     info!("Opening file {}", args.src.to_string_lossy());
-    let mut file = File::open(&args.src).unwrap_or_log();
+    let mut file = open_input(&args.src).map_err(IoError::<InputFileError>::from)?;
     let size = file
         .seek(io::SeekFrom::End(0))
         .map_err(IoError::<InputFileError>::from)?;

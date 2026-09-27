@@ -1,4 +1,4 @@
-use std::{error::Error, fs::File, path::PathBuf, sync::Arc, time::Instant};
+use std::{error::Error, path::PathBuf, sync::Arc, time::Instant};
 
 use bytesize::ByteSize;
 use tracing::{info, trace};
@@ -10,6 +10,7 @@ use crate::{
     util::{
         byteseries::{ByteSeries, EstimatedTime},
         device::WriteTarget,
+        source::input_size,
         stdiomux,
     },
 };
@@ -33,7 +34,7 @@ impl WriteVerifyWorkflow {
         compression: CompressionFormat,
         target: WriteTarget,
     ) -> std::io::Result<Self> {
-        let input_file_size = ByteSize::b(File::open(&input_file)?.metadata()?.len());
+        let input_file_size = ByteSize::b(input_size(&input_file)?);
         Ok(Self {
             input_file,
             input_file_size,

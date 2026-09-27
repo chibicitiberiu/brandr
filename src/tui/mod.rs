@@ -4,6 +4,7 @@ pub mod cli;
 mod fancy_ui;
 mod simple_ui;
 mod utils;
+mod wizard;
 
 use std::{fs::File, sync::Arc};
 
@@ -11,7 +12,8 @@ use tracing::{debug, info};
 
 pub use self::{cli::BurnArgs, utils::ByteSpeed};
 use crate::{
-    facade::CaligulaFacade,
+    codec::compression::CompressionFormat,
+    facade::{CaligulaFacade, WVState, WriteVerifyWorkflow},
     logging::LogPaths,
     tui::{
         simple_ui::do_setup_wizard,
@@ -37,6 +39,13 @@ pub fn main(
             None
         }
     };
+
+    // netflash: no image given, pick everything in the full-screen wizard
+    if args.image.is_none()
+        && let Some(catalog) = args.catalog.clone()
+    {
+        return netflash_main(&runtime, facade, &log_paths, &catalog);
+    }
 
     let Some(start_write_verify) = do_setup_wizard(&runtime, facade.clone(), &args)? else {
         return Ok(());
@@ -72,5 +81,71 @@ pub fn main(
     }
 
     debug!("Done!");
+    Ok(())
+}
+
+/// netflash flow: wizard, then one write + verify per disk (several for a
+/// floppy set, with an "insert the next floppy" screen in between).
+fn netflash_main(
+    runtime: &impl RemoteSpawn,
+    facade: Arc<impl CaligulaFacade>,
+    log_paths: &LogPaths,
+    catalog_url: &str,
+) -> anyhow::Result<()> {
+    eprintln!("Loading the image list from {catalog_url} ...");
+    let catalog = wizard::Catalog::fetch(catalog_url)?;
+
+    let mut tui = TUICapture::new()?;
+    let Some(plan) = wizard::run(tui.terminal(), &catalog)? else {
+        return Ok(());
+    };
+
+    for (n, disk) in plan.disks.iter().enumerate() {
+        if n > 0 && !wizard::insert_disk(tui.terminal(), &plan, n)? {
+            break;
+        }
+        if !wizard::ready_floppy(tui.terminal(), &plan.target)? {
+            break;
+        }
+        let input = std::path::PathBuf::from(&disk.url);
+        let compression =
+            CompressionFormat::detect_from_path(&input).unwrap_or(CompressionFormat::Identity);
+        let begin = WriteVerifyWorkflow::new(input, compression, plan.target.clone())?;
+        let child_state = simple_ui::try_start_write_or_escalate(
+            facade.clone(),
+            runtime,
+            &begin,
+            cli::UseSudo::Never,
+            true,
+        )?;
+        let watch = child_state.clone();
+        fancy_ui::run(
+            runtime,
+            fancy_ui::Params {
+                terminal: tui.terminal(),
+                begin: &begin,
+                child_state,
+                terminal_events: crossterm::event::EventStream::new(),
+                log_paths,
+            },
+        );
+        let failed = match &*watch.borrow() {
+            WVState::Finished { result: Err(e), .. } => Some(e.to_string()),
+            WVState::Finished { .. } => None,
+            _ => Some("the write was interrupted".into()),
+        };
+        if let Some(error) = failed {
+            wizard::notice(
+                tui.terminal(),
+                "The write failed",
+                vec![
+                    format!("{}: {error}", disk.name),
+                    String::new(),
+                    format!("Details are in {}", log_paths.main()),
+                ],
+            )?;
+            break;
+        }
+    }
     Ok(())
 }
